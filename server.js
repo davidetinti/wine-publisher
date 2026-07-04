@@ -195,6 +195,29 @@ async function handleApi(req, res, url) {
     if (req.method === 'POST' && parts[3] === 'publish' && parts[4] === 'ebay') {
       return sendJson(res, 200, await publishDraftToEbay(draft));
     }
+
+    // POST /api/drafts/:id/photos — aggiunge foto alla bozza, rianalizza
+    // tutto il set completo e ritenta la pubblicazione automatica.
+    if (req.method === 'POST' && parts[3] === 'photos') {
+      if (draft.status === 'pubblicato') {
+        return sendError(res, 400, 'Annuncio già pubblicato: non si possono aggiungere foto.');
+      }
+      const body = await readJson(req);
+      const newPhotos = Array.isArray(body.photos) ? body.photos : [];
+      if (!newPhotos.length) return sendError(res, 400, 'Nessuna foto ricevuta.');
+      if (draft.photos.length + newPhotos.length > 12) {
+        return sendError(res, 400, 'Massimo 12 foto per annuncio.');
+      }
+      store.addPhotos(id, newPhotos.map(parseDataUrl).map((p) => p.buffer));
+      const allPhotos = store.get(id).photos.map((name) => ({
+        mimeType: 'image/jpeg',
+        base64: fs.readFileSync(store.photoPath(id, name)).toString('base64'),
+      }));
+      const fields = await analyzeBottle(allPhotos, process.env);
+      store.update(id, fields);
+      const autoPublish = await maybeAutoPublish(store.get(id));
+      return sendJson(res, 200, { draft: store.get(id), autoPublish });
+    }
   }
 
   // GET /api/ebay/shipping-services — codici di spedizione validi (diagnostica)
@@ -274,11 +297,16 @@ server.listen(PORT, '0.0.0.0', () => {
     }
   }
   console.log('\n     Telefono e PC devono essere sulla stessa rete Wi-Fi.');
-  if (!envLoaded) {
-    console.log('\n  ⚠️  File .env non trovato: copia .env.example in .env e inserisci le chiavi API.');
-  } else {
-    if (!process.env.GEMINI_API_KEY) console.log('\n  ⚠️  GEMINI_API_KEY non impostata nel .env: la generazione annunci non funzionerà.');
-    if (!process.env.EBAY_USER_TOKEN) console.log('  ⚠️  EBAY_USER_TOKEN non impostato nel .env: la pubblicazione su eBay non funzionerà.');
+  // Le chiavi possono arrivare dal file .env o dall'ambiente (es. Docker):
+  // si avvisa solo se mancano davvero.
+  const missing = [];
+  if (!process.env.GEMINI_API_KEY) missing.push('GEMINI_API_KEY (generazione annunci)');
+  if (!process.env.EBAY_USER_TOKEN) missing.push('EBAY_USER_TOKEN (pubblicazione su eBay)');
+  if (missing.length) {
+    console.log(`\n  ⚠️  Configurazione incompleta: manca ${missing.join(' e ')}.`);
+    if (!envLoaded) {
+      console.log('      Nessun file .env trovato: crea il file (copia di .env.example) o passa le variabili d\'ambiente.');
+    }
   }
   console.log('');
 });

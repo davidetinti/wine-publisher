@@ -3,7 +3,8 @@
 const $ = (id) => document.getElementById(id);
 
 const state = {
-  pendingPhotos: [], // dataURL delle foto scelte, in attesa di analisi
+  pendingPhotos: [], // dataURL delle foto scelte, in attesa di invio
+  photoTarget: 'home', // 'home' = nuovo annuncio, 'editor' = aggiunta a bozza
   draft: null,       // bozza aperta nell'editor
   config: { gemini: false, ebay: false, ebayEnv: 'production' },
 };
@@ -92,6 +93,9 @@ function euro(n) {
 
 function showHome() {
   state.draft = null;
+  state.photoTarget = 'home';
+  state.pendingPhotos = [];
+  renderPendingThumbs();
   $('viewEditor').classList.add('hidden');
   $('viewHome').classList.remove('hidden');
   loadDrafts();
@@ -100,6 +104,9 @@ function showHome() {
 
 function showEditor(draft) {
   state.draft = draft;
+  state.photoTarget = 'editor';
+  state.pendingPhotos = [];
+  renderPendingThumbs();
   $('viewHome').classList.add('hidden');
   $('viewEditor').classList.remove('hidden');
   renderEditor();
@@ -165,10 +172,16 @@ async function loadDrafts() {
 
 /* ---------- scelta foto e analisi ---------- */
 
+// Quante foto si possono ancora aggiungere (12 totali per annuncio).
+function roomLeft() {
+  const existing = state.photoTarget === 'editor' && state.draft ? state.draft.photos.length : 0;
+  return 12 - existing - state.pendingPhotos.length;
+}
+
 async function onPhotosPicked(files, inputEl) {
   if (!files.length) return;
-  const room = 12 - state.pendingPhotos.length;
-  const all = [...files].slice(0, room);
+  const room = roomLeft();
+  const all = [...files].slice(0, Math.max(0, room));
   if (files.length > room) toast('Massimo 12 foto per annuncio.');
   overlay(true, 'Preparo le foto...');
   try {
@@ -185,8 +198,10 @@ async function onPhotosPicked(files, inputEl) {
 }
 
 function renderPendingThumbs() {
-  const thumbs = $('thumbs');
-  thumbs.innerHTML = '';
+  const isEditor = state.photoTarget === 'editor';
+  $('thumbs').innerHTML = '';
+  $('addThumbs').innerHTML = '';
+  const thumbs = $(isEditor ? 'addThumbs' : 'thumbs');
   state.pendingPhotos.forEach((src, i) => {
     const wrap = document.createElement('div');
     wrap.className = 'thumb';
@@ -202,9 +217,34 @@ function renderPendingThumbs() {
     });
     thumbs.appendChild(wrap);
   });
-  const btn = $('analyzeBtn');
-  btn.classList.toggle('hidden', !state.pendingPhotos.length);
-  btn.textContent = `✨ Genera annuncio (${state.pendingPhotos.length} foto)`;
+  const analyzeBtn = $('analyzeBtn');
+  analyzeBtn.classList.toggle('hidden', isEditor || !state.pendingPhotos.length);
+  analyzeBtn.textContent = `✨ Genera annuncio (${state.pendingPhotos.length} foto)`;
+  const addBtn = $('addAnalyzeBtn');
+  addBtn.classList.toggle('hidden', !isEditor || !state.pendingPhotos.length);
+  addBtn.textContent = `🔄 Aggiungi ${state.pendingPhotos.length} foto e rivaluta`;
+}
+
+async function addPhotosAndReanalyze() {
+  if (!state.pendingPhotos.length || !state.draft) return;
+  overlay(true, "📷 Aggiungo le foto e rivaluto l'annuncio...\n(fino a un minuto)");
+  try {
+    const { draft, autoPublish } = await api('POST', `/api/drafts/${state.draft.id}/photos`, {
+      photos: state.pendingPhotos,
+    });
+    state.pendingPhotos = [];
+    showEditor(draft);
+    toast(
+      autoPublish.published
+        ? '✅ Check superato: pubblicato su eBay!'
+        : "📝 Rivalutato: controlla l'esito.",
+      5000
+    );
+  } catch (e) {
+    toast('Errore: ' + e.message, 5000);
+  } finally {
+    overlay(false);
+  }
 }
 
 async function analyze() {
@@ -250,6 +290,8 @@ function renderEditor() {
     img.src = `/photos/${d.id}/${name}`;
     photosEl.appendChild(img);
   }
+
+  $('addPhotosBox').classList.toggle('hidden', d.status === 'pubblicato');
 
   for (const [field, id] of Object.entries(FIELD_IDS)) {
     $(id).value = d[field] ?? '';
@@ -444,7 +486,7 @@ function updateCamCount() {
 }
 
 function shoot() {
-  if (state.pendingPhotos.length >= 12) {
+  if (roomLeft() <= 0) {
     toast('Massimo 12 foto per annuncio.');
     return;
   }
@@ -479,10 +521,13 @@ async function deleteDraft() {
 /* ---------- avvio ---------- */
 
 $('cameraBtn').addEventListener('click', openCamera);
+$('addCameraBtn').addEventListener('click', openCamera);
 $('camShutter').addEventListener('click', shoot);
 $('camClose').addEventListener('click', closeCamera);
 $('cameraInput').addEventListener('change', (e) => onPhotosPicked(e.target.files, e.target));
 $('galleryInput').addEventListener('change', (e) => onPhotosPicked(e.target.files, e.target));
+$('addGalleryInput').addEventListener('change', (e) => onPhotosPicked(e.target.files, e.target));
+$('addAnalyzeBtn').addEventListener('click', addPhotosAndReanalyze);
 $('analyzeBtn').addEventListener('click', analyze);
 $('backBtn').addEventListener('click', showHome);
 $('saveBtn').addEventListener('click', () => saveDraft());

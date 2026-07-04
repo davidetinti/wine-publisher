@@ -53,6 +53,17 @@
       <div class="card">
         <div id="editorPhotos" class="thumbs"></div>
 
+        <div id="addPhotosBox">
+          <div class="picker-row">
+            <label class="photo-picker compact" id="addCameraBtn">📷 Aggiungi scatti</label>
+            <label class="photo-picker compact" for="addGalleryInput">🖼️ Dalla galleria</label>
+          </div>
+          <input type="file" id="addGalleryInput" accept="image/*" multiple hidden>
+          <div id="addThumbs" class="thumbs"></div>
+          <button id="addAnalyzeBtn" class="btn secondary big hidden">🔄 Aggiungi foto e rivaluta</button>
+          <p class="hint center">La rivalutazione rigenera titolo, descrizione e prezzo con tutte le foto.</p>
+        </div>
+
         <label class="field">Titolo <span id="titleCount" class="hint"></span>
           <input type="text" id="fTitolo" maxlength="80">
         </label>

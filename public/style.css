@@ -87,6 +87,7 @@ main {
   font-size: 0.9rem;
 }
 .center { text-align: center; margin-top: 8px; }
+.photo-picker.compact { padding: 12px 8px; font-size: 0.85rem; }
 .photo-picker:active { background: var(--secondary); }
 .photo-picker-icon { font-size: 2.2rem; }
 .hint { color: var(--muted); font-weight: 400; font-size: 0.8rem; }
