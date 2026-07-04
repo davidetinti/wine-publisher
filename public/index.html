@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="theme-color" content="#1a5c3a">
+  <title>🍾 Bottle Publisher</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍾</text></svg>">
+</head>
+<body>
+  <header>
+    <h1>🍾 Bottle Publisher</h1>
+    <p class="subtitle">Dalla foto all'annuncio in un minuto</p>
+  </header>
+
+  <main>
+    <div id="setupBanner" class="banner hidden"></div>
+
+    <!-- Schermata: nuovo annuncio -->
+    <section id="viewHome">
+      <div class="card">
+        <h2>Nuovo annuncio</h2>
+        <div class="picker-row">
+          <label class="photo-picker" for="cameraInput">
+            <span class="photo-picker-icon">📷</span>
+            <span>Scatta una foto</span>
+          </label>
+          <label class="photo-picker" for="galleryInput">
+            <span class="photo-picker-icon">🖼️</span>
+            <span>Scegli dalla galleria</span>
+          </label>
+        </div>
+        <p class="hint center">Puoi combinare scatti e galleria (max 12 foto).<br>Tocca una miniatura per rimuoverla.</p>
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+        <input type="file" id="galleryInput" accept="image/*" multiple hidden>
+        <div id="thumbs" class="thumbs"></div>
+        <button id="analyzeBtn" class="btn primary big hidden">✨ Genera annuncio</button>
+      </div>
+
+      <div class="card">
+        <h2>I tuoi annunci</h2>
+        <div id="draftList" class="draft-list">
+          <p class="muted">Nessun annuncio ancora.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Schermata: editor bozza -->
+    <section id="viewEditor" class="hidden">
+      <button id="backBtn" class="btn ghost">← Torna alla lista</button>
+
+      <div class="card">
+        <div id="editorPhotos" class="thumbs"></div>
+
+        <label class="field">Titolo <span id="titleCount" class="hint"></span>
+          <input type="text" id="fTitolo" maxlength="80">
+        </label>
+
+        <label class="field">Prezzo (€) <span id="priceRange" class="hint"></span>
+          <input type="number" id="fPrezzo" min="0" step="0.5" inputmode="decimal">
+        </label>
+
+        <label class="field">Descrizione
+          <textarea id="fDescrizione" rows="10"></textarea>
+        </label>
+
+        <details class="details-box">
+          <summary>Dettagli oggetto (epoca, materiale...)</summary>
+          <label class="field">Epoca <input type="text" id="fEpoca"></label>
+          <label class="field">Materiale <input type="text" id="fMateriale"></label>
+          <label class="field">Colore <input type="text" id="fColore"></label>
+          <label class="field">Altezza (cm) <input type="number" id="fAltezzaCm" min="0" step="0.5" inputmode="decimal"></label>
+          <label class="field">Condizione <input type="text" id="fCondizione"></label>
+        </details>
+
+        <button id="saveBtn" class="btn secondary big">💾 Salva modifiche</button>
+      </div>
+
+      <div class="card">
+        <h2>Pubblica</h2>
+        <div id="ebayStatus"></div>
+        <button id="publishEbayBtn" class="btn primary big">🚀 Pubblica su eBay</button>
+
+        <h3 class="portal-title">Altri portali (copia e incolla)</h3>
+        <p class="muted small">Subito, Vinted, Facebook Marketplace e Wallapop non hanno API pubbliche per inserire annunci:
+          copia il testo con un tap, apri il portale e incolla. Le foto le hai già sul telefono.</p>
+        <div id="portalCards"></div>
+      </div>
+
+      <div class="card danger-zone">
+        <button id="deleteBtn" class="btn danger">🗑 Elimina annuncio</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Overlay di caricamento -->
+  <div id="overlay" class="overlay hidden">
+    <div class="spinner"></div>
+    <p id="overlayText">Un attimo...</p>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

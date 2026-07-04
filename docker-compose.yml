@@ -1,0 +1,17 @@
+# Da usare SUL SERVER, nella cartella ~/bottle-publisher insieme a un file .env
+# (copiato da .env.example e compilato con le tue chiavi + APP_PASSWORD).
+# Sostituisci TUO-UTENTE-GITHUB con il tuo nome utente GitHub (minuscolo).
+services:
+  bottle-publisher:
+    image: ghcr.io/TUO-UTENTE-GITHUB/ebay-publisher:latest
+    container_name: bottle-publisher
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - bottle_data:/app/data
+
+volumes:
+  bottle_data:
