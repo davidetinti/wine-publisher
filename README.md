@@ -221,8 +221,10 @@ lanciare il deploy a mano da **Actions → Build e Deploy → Run workflow**.
 
 ### Note importanti per l'esposizione su internet
 
-- **Imposta `APP_PASSWORD`** nel `.env` del server: senza, chiunque trovi
-  l'indirizzo può usare la tua chiave Gemini e pubblicare su eBay a nome tuo.
+- **Imposta `APP_USER` e `APP_PASSWORD`** nel `.env` del server: senza,
+  chiunque trovi l'indirizzo può usare la tua chiave Gemini e pubblicare su
+  eBay a nome tuo. Il browser chiederà le credenziali alla prima visita
+  (finestra di login standard) e le ricorderà.
 - La password viaggia in chiaro su HTTP: se il server è raggiungibile da
   internet metti davanti un reverse proxy con HTTPS (es. Caddy: due righe di
   configurazione e il certificato è automatico) oppure raggiungi il server

@@ -200,17 +200,26 @@ async function handleApi(req, res, url) {
   return sendError(res, 404, 'Endpoint non trovato.');
 }
 
-// Protezione con password (indispensabile se l'app è esposta su internet):
-// imposta APP_PASSWORD nel .env. Il nome utente è indifferente.
+// Protezione con nome utente e password (indispensabile se l'app è esposta
+// su internet): imposta APP_USER e APP_PASSWORD nel .env.
+function timingEqual(a, b) {
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
+}
+
 function isAuthorized(req) {
   const password = process.env.APP_PASSWORD || '';
   if (!password) return true;
+  const user = process.env.APP_USER || '';
   const header = req.headers.authorization || '';
   if (!header.startsWith('Basic ')) return false;
   const decoded = Buffer.from(header.slice(6), 'base64').toString('utf8');
-  const given = Buffer.from(decoded.split(':').slice(1).join(':'));
-  const expected = Buffer.from(password);
-  return given.length === expected.length && crypto.timingSafeEqual(given, expected);
+  const sep = decoded.indexOf(':');
+  const givenUser = sep === -1 ? '' : decoded.slice(0, sep);
+  const givenPassword = sep === -1 ? decoded : decoded.slice(sep + 1);
+  const userOk = !user || timingEqual(givenUser, user);
+  return userOk && timingEqual(givenPassword, password);
 }
 
 const server = http.createServer(async (req, res) => {
