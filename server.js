@@ -94,11 +94,16 @@ async function maybeAutoPublish(draft) {
   const minPrice = Number(process.env.AUTO_PUBLISH_MIN_PRICE || '0');
   const verdict = draft.valutazione || { pubblicare: true, motivo: '' };
 
+  const photoCheck = draft.valutazioneFoto;
+
   let reason = null;
   if (!enabled) {
     reason = 'Pubblicazione automatica disattivata (AUTO_PUBLISH=false nel .env).';
   } else if (!verdict.pubblicare) {
     reason = verdict.motivo || "L'AI ritiene che non valga la pena venderla.";
+  } else if (photoCheck && !photoCheck.sufficienti) {
+    const missing = (photoCheck.mancanti || []).join(', ');
+    reason = `Foto insufficienti per un buon annuncio${missing ? ` — da aggiungere: ${missing}` : ''}. Rifai le foto oppure pubblica manualmente.`;
   } else if (minPrice > 0 && Number(draft.prezzo) < minPrice) {
     reason = `Prezzo stimato (${draft.prezzo} €) sotto la soglia AUTO_PUBLISH_MIN_PRICE (${minPrice} €).`;
   } else if (!process.env.EBAY_USER_TOKEN) {

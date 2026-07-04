@@ -308,6 +308,15 @@ function renderEbayStatus() {
       ? `<div class="verdict ok">🤖 <b>Vendibile secondo l'AI:</b> ${escapeHtml(verdict.motivo)}</div>`
       : `<div class="verdict bad">🤖 <b>L'AI sconsiglia la vendita:</b> ${escapeHtml(verdict.motivo)}</div>`;
   }
+  const photoCheck = d.valutazioneFoto;
+  if (photoCheck) {
+    if (!photoCheck.sufficienti) {
+      const missing = (photoCheck.mancanti || []).join(', ');
+      html += `<div class="verdict bad">📷 <b>Foto insufficienti:</b> ${escapeHtml(missing || photoCheck.note || 'servono più inquadrature')}</div>`;
+    } else if (photoCheck.note) {
+      html += `<div class="verdict ok">📷 <b>Foto:</b> ${escapeHtml(photoCheck.note)}</div>`;
+    }
+  }
 
   if (d.ebay && d.ebay.itemId) {
     html += `<div class="ebay-ok">✅ Pubblicato su eBay (n. ${escapeHtml(d.ebay.itemId)})<br>
