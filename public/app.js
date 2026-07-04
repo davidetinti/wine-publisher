@@ -394,6 +394,65 @@ function renderPortals() {
   }
 }
 
+/* ---------- fotocamera integrata (scatti multipli) ---------- */
+
+let camStream = null;
+
+async function openCamera() {
+  // getUserMedia richiede HTTPS (o localhost): altrove si torna alla
+  // fotocamera nativa del telefono (uno scatto alla volta).
+  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+    $('cameraInput').click();
+    return;
+  }
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1920 } },
+      audio: false,
+    });
+  } catch {
+    // permesso negato o fotocamera occupata: fallback nativo
+    $('cameraInput').click();
+    return;
+  }
+  $('cameraVideo').srcObject = camStream;
+  updateCamCount();
+  $('cameraView').classList.remove('hidden');
+}
+
+function closeCamera() {
+  if (camStream) {
+    camStream.getTracks().forEach((t) => t.stop());
+    camStream = null;
+  }
+  $('cameraVideo').srcObject = null;
+  $('cameraView').classList.add('hidden');
+  renderPendingThumbs();
+}
+
+function updateCamCount() {
+  $('camCount').textContent = `${state.pendingPhotos.length} foto`;
+}
+
+function shoot() {
+  if (state.pendingPhotos.length >= 12) {
+    toast('Massimo 12 foto per annuncio.');
+    return;
+  }
+  const video = $('cameraVideo');
+  if (!video.videoWidth) return;
+  const scale = Math.min(1, 1600 / Math.max(video.videoWidth, video.videoHeight));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(video.videoWidth * scale);
+  canvas.height = Math.round(video.videoHeight * scale);
+  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+  state.pendingPhotos.push(canvas.toDataURL('image/jpeg', 0.85));
+  updateCamCount();
+  video.classList.remove('cam-flash');
+  void video.offsetWidth; // riavvia l'animazione
+  video.classList.add('cam-flash');
+}
+
 /* ---------- eliminazione ---------- */
 
 async function deleteDraft() {
@@ -410,6 +469,9 @@ async function deleteDraft() {
 
 /* ---------- avvio ---------- */
 
+$('cameraBtn').addEventListener('click', openCamera);
+$('camShutter').addEventListener('click', shoot);
+$('camClose').addEventListener('click', closeCamera);
 $('cameraInput').addEventListener('change', (e) => onPhotosPicked(e.target.files, e.target));
 $('galleryInput').addEventListener('change', (e) => onPhotosPicked(e.target.files, e.target));
 $('analyzeBtn').addEventListener('click', analyze);

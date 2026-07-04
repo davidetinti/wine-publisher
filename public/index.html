@@ -22,16 +22,16 @@
       <div class="card">
         <h2>Nuovo annuncio</h2>
         <div class="picker-row">
-          <label class="photo-picker" for="cameraInput">
+          <label class="photo-picker" id="cameraBtn">
             <span class="photo-picker-icon">📷</span>
-            <span>Scatta una foto</span>
+            <span>Scatta foto</span>
           </label>
           <label class="photo-picker" for="galleryInput">
             <span class="photo-picker-icon">🖼️</span>
             <span>Scegli dalla galleria</span>
           </label>
         </div>
-        <p class="hint center">Puoi combinare scatti e galleria (max 12 foto).<br>Tocca una miniatura per rimuoverla.</p>
+        <p class="hint center">Puoi scattare più foto di seguito e combinarle con la galleria (max 12).<br>Tocca una miniatura per rimuoverla.</p>
         <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
         <input type="file" id="galleryInput" accept="image/*" multiple hidden>
         <div id="thumbs" class="thumbs"></div>
@@ -93,6 +93,16 @@
       </div>
     </section>
   </main>
+
+  <!-- Fotocamera integrata (scatti multipli) -->
+  <div id="cameraView" class="camera hidden">
+    <video id="cameraVideo" autoplay playsinline muted></video>
+    <div class="camera-bar">
+      <button id="camClose" class="cam-side" type="button">✓ Fine</button>
+      <button id="camShutter" class="cam-shutter" type="button" aria-label="Scatta"></button>
+      <span id="camCount" class="cam-side cam-count">0 foto</span>
+    </div>
+  </div>
 
   <!-- Overlay di caricamento -->
   <div id="overlay" class="overlay hidden">
